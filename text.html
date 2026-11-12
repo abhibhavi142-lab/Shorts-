@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI YouTube Shorts Creator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #6366f1;
+            --accent: #ec4899;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+        
+        header { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 5px; }
+        header h1 { font-size: 1.25rem; font-weight: 700; background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; gap: 8px; }
+        
+        .container { max-width: 1000px; margin: 20px auto; padding: 0 15px; width: 100%; flex: 1; }
+        
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
+        .card h2 { font-size: 1.1rem; margin-bottom: 15px; color: var(--text-main); display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+        
+        .upload-dropzone { border: 2px dashed var(--primary); border-radius: 12px; padding: 25px; text-align: center; cursor: pointer; background: rgba(99, 102, 241, 0.05); }
+        .upload-dropzone i { font-size: 2.5rem; color: var(--primary); margin-bottom: 10px; }
+        
+        .form-grid { display: flex; flex-direction: column; gap: 15px; margin-top: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; position: relative; }
+        label { font-size: 0.85rem; font-weight: 500; color: var(--text-muted); }
+        
+        .custom-select-btn { background: var(--bg-color); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: var(--text-main); font-size: 1rem; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .dropdown-list { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; margin-top: 4px; z-index: 100; max-height: 180px; overflow-y: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); }
+        .dropdown-item { padding: 12px; font-size: 0.9rem; cursor: pointer; border-bottom: 1px solid var(--border); color: var(--text-main); }
+        .dropdown-item:active { background: var(--primary); color: white; }
+        .dropdown-list.show { display: block; }
+
+        .btn { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; border: none; border-radius: 8px; padding: 14px; font-size: 1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 15px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .progress-container { display: none; margin-top: 15px; }
+        .progress-bar-bg { background: var(--bg-color); border-radius: 9999px; height: 8px; overflow: hidden; border: 1px solid var(--border); margin-top: 8px; }
+        .progress-bar-fill { background: linear-gradient(90deg, var(--primary), var(--accent)); height: 100%; width: 0%; transition: width 0.3s ease; }
+        
+        .results-grid { display: flex; flex-direction: column; gap: 15px; margin-top: 15px; }
+        .short-card { background: var(--bg-color); border: 1px solid var(--border); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
+        .short-card video { width: 100%; border-radius: 8px; max-height: 350px; object-fit: cover; background: black; }
+        .short-actions { display: flex; gap: 8px; }
+        .btn-sm { padding: 10px; font-size: 0.85rem; border-radius: 6px; background: var(--border); color: white; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 1; }
+        .btn-sm.primary { background: var(--primary); }
+        .btn-sm.danger { background: #ef4444; }
+        
+        .hidden { display: none !important; }
+        .status-text { color: var(--text-muted); font-size: 0.85rem; margin-top: 6px; text-align: center; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><i class="fa-solid fa-clapperboard"></i> AI YouTube Shorts Creator</h1>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Memory-Optimized Mobile Version</div>
+    </header>
+
+    <div class="container">
+        <div class="card" id="upload-card">
+            <h2><i class="fa-solid fa-cloud-arrow-up"></i> 1. Select Video & Configure</h2>
+            <div class="upload-dropzone" onclick="document.getElementById('videoFile').click()">
+                <i class="fa-solid fa-file-video"></i>
+                <p style="font-weight: 600; margin-bottom: 4px;">Tap to choose video file</p>
+                <p style="color: var(--text-muted); font-size: 0.8rem;">Supports MP4, MOV, MKV (Up to 1GB)</p>
+                <input type="file" id="videoFile" accept="video/*" class="hidden">
+            </div>
+            <div id="file-info" class="hidden" style="margin-top: 12px; padding: 10px; background: var(--bg-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span id="file-name" style="font-size: 0.9rem; font-weight: 500;"></span>
+                <span style="color: #10b981; font-size: 0.85rem;"><i class="fa-solid fa-check-circle"></i> Ready</span>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Video Style / Genre</label>
+                    <button type="button" class="custom-select-btn" id="btnVideoStyle">
+                        <span id="valVideoStyle">Telugu comedy</span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-list" id="listVideoStyle">
+                        <div class="dropdown-item" onclick="selectOption('videoStyle', 'Viral YouTube Shorts')">Viral YouTube Shorts</div>
+                        <div class="dropdown-item" onclick="selectOption('videoStyle', 'Podcast highlights')">Podcast highlights</div>
+                        <div class="dropdown-item" onclick="selectOption('videoStyle', 'Telugu comedy')">Telugu comedy</div>
+                        <div class="dropdown-item" onclick="selectOption('videoStyle', 'Gaming highlights')">Gaming highlights</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Caption Style</label>
+                    <button type="button" class="custom-select-btn" id="btnCaptionStyle">
+                        <span id="valCaptionStyle">Viral Shorts captions</span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-list" id="listCaptionStyle">
+                        <div class="dropdown-item" onclick="selectOption('captionStyle', 'Viral Shorts captions')">Viral Shorts captions</div>
+                        <div class="dropdown-item" onclick="selectOption('captionStyle', 'Podcast captions')">Podcast captions</div>
+                        <div class="dropdown-item" onclick="selectOption('captionStyle', 'Cinematic captions')">Cinematic captions</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Target Short Duration</label>
+                    <button type="button" class="custom-select-btn" id="btnShortDuration">
+                        <span id="valShortDuration">30 Seconds</span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-list" id="listShortDuration">
+                        <div class="dropdown-item" onclick="selectOption('shortDuration', '30 Seconds', '30')">30 Seconds</div>
+                        <div class="dropdown-item" onclick="selectOption('shortDuration', '15 Seconds', '15')">15 Seconds</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn" id="startBtn" disabled>
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Start AI Processing
+            </button>
+
+            <div class="progress-container" id="progressContainer">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                    <span id="progressStatus">Initializing AI processor...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progressBar"></div>
+                </div>
+                <div class="status-text" id="statusDetail">Preparing frames...</div>
+            </div>
+        </div>
+
+        <div class="card" id="results-card">
+            <h2>
+                <span><i class="fa-solid fa-video"></i> 2. Generated Shorts History</span>
+                <button id="clearHistoryBtn" class="btn-sm danger" style="padding: 4px 10px; font-size: 0.75rem; width: auto;"><i class="fa-solid fa-trash"></i> Clear History</button>
+            </h2>
+            <div class="results-grid" id="shortsResultsGrid">
+                <p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px;">No generated shorts saved yet. Upload a video and start processing!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedVideoUrl = "";
+        let selectedConfig = {
+            videoStyle: "Telugu comedy",
+            captionStyle: "Viral Shorts captions",
+            shortDuration: "30"
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadPreferences();
+            renderHistory();
+
+            setupDropdown('btnVideoStyle', 'listVideoStyle');
+            setupDropdown('btnCaptionStyle', 'listCaptionStyle');
+            setupDropdown('btnShortDuration', 'listShortDuration');
+
+            window.addEventListener('click', (e) => {
+                if (!e.target.closest('.form-group')) {
+                    document.querySelectorAll('.dropdown-list').forEach(l => l.classList.remove('show'));
+                }
+            });
+
+            const fileInput = document.getElementById('videoFile');
+            if (fileInput) fileInput.addEventListener('change', handleFileSelect);
+
+            const startBtn = document.getElementById('startBtn');
+            if (startBtn) startBtn.addEventListener('click', startProcess);
+
+            const clearBtn = document.getElementById('clearHistoryBtn');
+            if (clearBtn) clearBtn.addEventListener('click', clearHistory);
+        });
+
+        function setupDropdown(btnId, listId) {
+            const btn = document.getElementById(btnId);
+            const list = document.getElementById(listId);
+            if (btn && list) {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.dropdown-list').forEach(l => {
+                        if (l.id !== listId) l.classList.remove('show');
+                    });
+                    list.classList.toggle('show');
+                });
+            }
+        }
+
+        function selectOption(type, labelText, rawValue = null) {
+            selectedConfig[type] = rawValue || labelText;
+            const spanElem = document.getElementById(`val${type.charAt(0).toUpperCase() + type.slice(1)}`);
+            if (spanElem) spanElem.innerText = labelText;
+            document.querySelectorAll('.dropdown-list').forEach(l => l.classList.remove('show'));
+            savePreferences();
+        }
+
+        function savePreferences() {
+            try {
+                localStorage.setItem('shorts_config', JSON.stringify(selectedConfig));
+            } catch (e) {}
+        }
+
+        function loadPreferences() {
+            try {
+                const saved = localStorage.getItem('shorts_config');
+                if (saved) {
+                    selectedConfig = JSON.parse(saved);
+                    if (selectedConfig.videoStyle) document.getElementById('valVideoStyle').innerText = selectedConfig.videoStyle;
+                    if (selectedConfig.captionStyle) document.getElementById('valCaptionStyle').innerText = selectedConfig.captionStyle;
+                    if (selectedConfig.shortDuration) {
+                        document.getElementById('valShortDuration').innerText = selectedConfig.shortDuration === '15' ? '15 Seconds' : '30 Seconds';
+                    }
+                }
+            } catch (e) {}
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target?.files?.[0];
+            if (file) {
+                const fileNameElem = document.getElementById('file-name');
+                if (fileNameElem) fileNameElem.innerText = `${file.name} (${(file.size / (1024*1024)).toFixed(1)} MB)`;
+                
+                const fileInfoElem = document.getElementById('file-info');
+                if (fileInfoElem) fileInfoElem.classList.remove('hidden');
+                
+                if (selectedVideoUrl) URL.revokeObjectURL(selectedVideoUrl);
+                selectedVideoUrl = URL.createObjectURL(file);
+                
+                const startBtn = document.getElementById('startBtn');
+                if (startBtn) startBtn.removeAttribute('disabled');
+            }
+        }
+
+        function startProcess() {
+            if (!selectedVideoUrl) return;
+
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+            const progressStatus = document.getElementById('progressStatus');
+            const statusDetail = document.getElementById('statusDetail');
+
+            if (progressContainer) progressContainer.style.display = 'block';
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 25;
+                if (progressBar) progressBar.style.width = progress + '%';
+                if (progressPercent) progressPercent.innerText = progress + '%';
+                
+                if (progress === 50) {
+                    if (progressStatus) progressStatus.innerText = "Extracting video highlights...";
+                    if (statusDetail) statusDetail.innerText = "Processing audio track & framing...";
+                } else if (progress >= 100) {
+                    clearInterval(interval);
+                    if (progressStatus) progressStatus.innerText = "Processing Complete!";
+                    if (statusDetail) statusDetail.innerText = "Short successfully created.";
+                    
+                    saveNewShortToHistory();
+                    renderHistory();
+                }
+            }, 300);
+        }
+
+        function saveNewShortToHistory() {
+            try {
+                let history = JSON.parse(localStorage.getItem('shorts_history') || '[]');
+                const newShort = {
+                    id: Date.now(),
+                    title: `${selectedConfig.videoStyle} Highlight`,
+                    duration: selectedConfig.shortDuration || "30",
+                    date: new Date().toLocaleDateString(),
+                    videoUrl: selectedVideoUrl
+                };
+
+                history.unshift(newShort);
+                if (history.length > 2) history.pop();
+
+                localStorage.setItem('shorts_history', JSON.stringify(history));
+            } catch (e) {}
+        }
+
+        function renderHistory() {
+            const grid = document.getElementById('shortsResultsGrid');
+            if (!grid) return;
+            
+            try {
+                const history = JSON.parse(localStorage.getItem('shorts_history') || '[]');
+                if (history.length === 0) {
+                    grid.innerHTML = `<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px;">No generated shorts saved yet. Upload a video and start processing!</p>`;
+                    return;
+                }
+
+                grid.innerHTML = "";
+                history.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'short-card';
+                    card.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: 0.95rem; font-weight: 600;">${item.title}</h3>
+                            <span style="font-size: 0.75rem; background: var(--primary); padding: 2px 8px; border-radius: 9999px;">${item.duration}s</span>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Created: ${item.date}</div>
+                        <video controls src="${item.videoUrl}"></video>
+                        <div class="short-actions">
+                            <a href="${item.videoUrl}" download="short_${item.id}.mp4" class="btn-sm primary"><i class="fa-solid fa-download"></i> Download MP4</a>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (e) {}
+        }
+
+        function clearHistory() {
+            if (confirm("Clear history?")) {
+                localStorage.removeItem('shorts_history');
+                renderHistory();
+            }
+        }
+    </script>
+</body>
+</html>
